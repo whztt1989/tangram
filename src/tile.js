@@ -38,7 +38,7 @@ export default class Tile {
         this.style_zoom = style_zoom; // zoom level to be used for styling
 
         this.coords = coords;
-        this.coords = Tile.overZoomedCoordinate(this.coords, this.source.max_zoom);
+        this.coords = Tile.overZoomedCoordinate(this.coords, this.source);
         this.coord_key = Tile.coordKey(this.coords);
         this.key = Tile.key(this.coords, this.source, this.style_zoom);
         this.min = Geo.metersForTile(this.coords);
@@ -65,7 +65,7 @@ export default class Tile {
     }
 
     static key (coords, source, style_zoom) {
-        coords = Tile.overZoomedCoordinate(coords, source.max_zoom);
+        coords = Tile.overZoomedCoordinate(coords, source);
         if (coords.y < 0 || coords.y >= (1 << coords.z) || coords.z < 0) {
             return; // cull tiles out of range (x will wrap)
         }
@@ -89,9 +89,21 @@ export default class Tile {
         return false;
     }
 
-    static overZoomedCoordinate({x, y, z}, max_zoom) {
-        if (max_zoom !== undefined && z > max_zoom) {
-            return Tile.coordinateAtZoom({x, y, z}, max_zoom);
+    static overZoomedCoordinate({x, y, z}, source) {
+        let zbase;
+        if (Array.isArray(source.zooms)) {
+            let i=0;
+            while (source.zooms[i] <= z) {
+                zbase = source.zooms[i];
+                i++;
+            }
+        }
+        if (zbase == null || zbase > source.max_zoom) {
+            zbase = source.max_zoom;
+        }
+
+        if (zbase !== undefined && z > zbase) {
+            return Tile.coordinateAtZoom({x, y, z}, zbase);
         }
         return {x, y, z};
     }

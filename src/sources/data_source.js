@@ -35,6 +35,10 @@ export default class DataSource {
             });
         }
 
+        // optional list of zooms at which tiles should be loaded
+        // intermediate zooms will scale up from smallest previous zoom listed
+        this.zooms = source.zooms;
+
         // overzoom will apply for zooms higher than this
         this.max_zoom = Math.min(source.max_zoom || Geo.max_zoom, Geo.max_zoom);
     }
