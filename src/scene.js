@@ -1,3 +1,4 @@
+/* global Tangram */
 import Utils from './utils/utils';
 import WorkerBroker from './utils/worker_broker';
 import subscribeMixin from './utils/subscribe';
@@ -249,18 +250,10 @@ export default class Scene {
     }
 
     // Get the URL to load the web worker from
+    // `Tangram._source` is initialized by external loader script
     getWorkerUrl() {
-        let worker_url = this.worker_url || Utils.findCurrentURL('tangram.debug.js', 'tangram.min.js');
-
-        if (!worker_url) {
-            throw new Error("Can't load worker because couldn't find base URL that library was loaded from");
-        }
-
-        if (this.allow_cross_domain_workers) {
-            let body = `importScripts('${worker_url}');`;
-            return Utils.createObjectURL(new Blob([body], { type: 'application/javascript' }));
-        }
-        return worker_url;
+        // Construct local URL to raw source
+        return Utils.createObjectURL(new Blob([Tangram._source], { type: 'application/javascript' }));
     }
 
     // Web workers handle heavy duty tile construction: networking, geometry processing, etc.

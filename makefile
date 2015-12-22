@@ -12,10 +12,11 @@ all: \
 debug: dist/tangram.debug.js
 
 dist/tangram.debug.js: .npm src/gl/shader_sources.js $(shell ./build_deps.sh)
-	node build.js --debug=true --require './src/module.js' --runtime | $(DEREQUIRE) > dist/tangram.debug.js
+	node build.js --debug=true --require './src/module.js' --runtime | $(DEREQUIRE) > dist/tangram.raw.js
+	cat dist/tangram.raw.js | ./wrap_lib.sh > dist/tangram.debug.js
 
 dist/tangram.min.js: dist/tangram.debug.js
-	$(UGLIFY) dist/tangram.debug.js -c warnings=false -m -o dist/tangram.min.js
+	$(UGLIFY) dist/tangram.raw.js -c warnings=false -m | ./wrap_lib.sh > dist/tangram.min.js
 	@gzip dist/tangram.min.js -c | wc -c | awk '{ printf "%.0fk minified+gzipped\n", $$1 / 1024 }'
 
 # Process shaders into strings and export as a module
