@@ -36,6 +36,9 @@ export default class Scene {
         options = options || {};
         subscribeMixin(this);
 
+        Utils.use_high_density_display = options.highDensityDisplay !== undefined ? options.highDensityDisplay : true;
+        Utils.updateDevicePixelRatio();
+
         this.initialized = false;
         this.initializing = false;
 
@@ -48,9 +51,6 @@ export default class Scene {
         if (options.disableVertexArrayObjects === true) {
             VertexArrayObject.disabled = true;
         }
-
-        Utils.use_high_density_display = options.highDensityDisplay !== undefined ? options.highDensityDisplay : true;
-        Utils.updateDevicePixelRatio();
 
         this.config = null;
         this.config_source = config_source;
