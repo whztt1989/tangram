@@ -38,14 +38,13 @@ export default class Scene {
 
         this.initialized = false;
         this.initializing = false;
-        this.sources = {};
 
         this.view = new View(this, options);
         this.tile_manager = TileManager;
         this.tile_manager.init({ scene: this, view: this.view });
         this.num_workers = options.numWorkers || 2;
-        this.allow_cross_domain_workers = (options.allowCrossDomainWorkers === false ? false : true);
-        this.worker_url = options.workerUrl;
+        this.loadWorkers();
+
         if (options.disableVertexArrayObjects === true) {
             VertexArrayObject.disabled = true;
         }
@@ -58,6 +57,7 @@ export default class Scene {
         this.config_serialized = null;
         this.last_valid_config_source = null;
 
+        this.sources = {};
         this.styles = null;
         this.active_styles = {};
 
@@ -116,7 +116,7 @@ export default class Scene {
 
         // Load scene definition (sources, styles, etc.), then create styles & workers
         return this.loadScene(config_source, config_path)
-            .then(() => this.createWorkers())
+            .then(() => this.loadWorkers())
             .then(() => {
                 this.createCanvas();
                 this.resetFeatureSelection();
@@ -257,41 +257,40 @@ export default class Scene {
     }
 
     // Web workers handle heavy duty tile construction: networking, geometry processing, etc.
-    createWorkers() {
-        if (!this.workers) {
-            return this.makeWorkers(this.getWorkerUrl());
-        }
-        return Promise.resolve();
-    }
-
     // Instantiate workers from URL, init event handlers
-    makeWorkers(url) {
-        var queue = [];
+    loadWorkers() {
+        if (this._loading_workers) {
+            return this._loading_workers;
+        }
 
+        let worker_url = this.getWorkerUrl();
+        let queue = [];
         this.workers = [];
-        for (var id=0; id < this.num_workers; id++) {
-            var worker = new Worker(url);
+
+        for (let id=0; id < this.num_workers; id++) {
+            let worker = new Worker(worker_url);
             this.workers[id] = worker;
 
             worker.addEventListener('message', this.workerLogMessage.bind(this));
             WorkerBroker.addWorker(worker);
 
-            log.debug(`Scene.makeWorkers: initializing worker ${id}`);
+            log.debug(`Scene.loadWorkers: initializing worker ${id}`);
             let _id = id;
             queue.push(WorkerBroker.postMessage(worker, 'self.init', id, this.num_workers, Utils.device_pixel_ratio).then(
                 (id) => {
-                    log.debug(`Scene.makeWorkers: initialized worker ${id}`);
+                    log.debug(`Scene.loadWorkers: initialized worker ${id}`);
                     return id;
                 },
                 (error) => {
-                    log.error(`Scene.makeWorkers: failed to initialize worker ${_id}:`, error);
+                    log.error(`Scene.loadWorkers: failed to initialize worker ${_id}:`, error);
                     return Promise.reject(error);
                 })
             );
         }
 
         this.next_worker = 0;
-        return Promise.all(queue);
+        this._loading_workers = Promise.all(queue);
+        return this._loading_workers;
     }
 
     // Round robin selection of next worker

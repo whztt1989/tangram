@@ -68,7 +68,6 @@ function extendLeaflet(options) {
                         // advanced option, app will have to manually called scene.update() per frame
                         disableRenderLoop: this.options.disableRenderLoop,
                         // advanced option, will require library to be served as same host as page
-                        allowCrossDomainWorkers: this.options.allowCrossDomainWorkers
                     });
             },
 
