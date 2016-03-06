@@ -11,6 +11,6 @@ SOURCE=$(cat)
 echo 'window._TangramSource = ';
 echo "$SOURCE" | node_modules/.bin/jsesc --wrap --single-quotes
 echo ';'
-echo 'eval(window._TangramSource);';
+echo 'window.eval(window._TangramSource);';
 echo 'Tangram._source = window._TangramSource;';
 echo 'delete window._TangramSource;';
