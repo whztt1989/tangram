@@ -97,7 +97,14 @@ Object.assign(self, {
         }
 
         // Expand styles
-        config = Utils.stringsToFunctions(config, StyleParser.wrapFunction);
+        // config = Utils.stringsToFunctions(config, StyleParser.wrapFunction);
+        config.layers = Utils.stringsToFunctions(config.layers, StyleParser.wrapFunction);
+        // for (let [key, val, obj] of Utils.recurseEntries(config.layers)) {
+        //     if (key === 'filter') {
+        //         obj[key] = Utils.stringsToFunctions(val, StyleParser.wrapFunction);
+        //     }
+        // }
+
         self.styles = StyleManager.build(config.styles, { generation: self.generation });
 
         // Parse each top-level layer as a separate rule tree

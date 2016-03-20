@@ -21,6 +21,7 @@ StyleParser.wrapFunction = function (func) {
                 var properties = context.properties;
 
                 var val = (${func}());
+                // ${func}
 
                 if (typeof val === 'number' && isNaN(val)) {
                     val = null; // convert NaNs to nulls

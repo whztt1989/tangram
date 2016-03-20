@@ -232,14 +232,33 @@ Utils.deserializeWithFunctions = function(serialized, wrap) {
 
 // Recursively parse an object, attempting to convert string properties that look like functions back into functions
 Utils.stringsToFunctions = function(obj, wrap) {
+    // // Convert string
+    // if (typeof obj === 'string') {
+    //     obj = Utils.stringToFunction(obj, wrap);
+    // }
+    // // Loop through object properties
+    // else if (typeof obj === 'object') {
+    //     for (let p in obj) {
+    //         obj[p] = Utils.stringsToFunctions(obj[p], wrap);
+    //     }
+    // }
+    // return obj;
+
+    // Loop through object properties
     // Convert string
     if (typeof obj === 'string') {
-        obj = Utils.stringToFunction(obj, wrap);
+        return Utils.stringToFunction(obj, wrap);
     }
-    // Loop through object properties
     else if (typeof obj === 'object') {
         for (let p in obj) {
-            obj[p] = Utils.stringsToFunctions(obj[p], wrap);
+            // Convert string
+            if (typeof obj[p] === 'string') {
+                // obj['_'+p] = obj[p];
+                obj[p] = Utils.stringToFunction(obj[p], wrap, p, obj);
+            }
+            else if (typeof obj[p] === 'object') {
+                obj[p] = Utils.stringsToFunctions(obj[p], wrap);
+            }
         }
     }
     return obj;
@@ -247,17 +266,29 @@ Utils.stringsToFunctions = function(obj, wrap) {
 
 // Convert string back into a function
 // TODO: make function matching tolerant of whitespace and multilines
-Utils.stringToFunction = function(val, wrap) {
+Utils.stringToFunction = function(val, wrap, key, obj) {
     // Convert strings back into functions
+    // var match = val.match(/^\s*function[^(]*\([^)]*\)[^{]*\{([\s\S]*)\}\s*$/);
+    // if (match) {
     if (val.match(/^\s*function\s*\w*\s*\([\s\S]*\)\s*\{[\s\S]*\}/m) != null) {
         var f;
         try {
             if (typeof wrap === 'function') {
+                // eval('f = ' + wrap(match[1])); // jshint ignore:line
                 eval('f = ' + wrap(val)); // jshint ignore:line
             }
             else {
+                // eval('f = function() { ' + val + ' }'); // jshint ignore:line
                 eval('f = ' + val); // jshint ignore:line
             }
+
+            // f = new Function('context', );
+
+            // Optionally save original value
+            if (key) {
+                obj['_'+key] = val;
+            }
+
             return f;
         }
         catch (e) {

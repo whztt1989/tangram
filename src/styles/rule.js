@@ -1,5 +1,7 @@
 import {Styles} from './style_manager';
+import {StyleParser} from './style_parser';
 import mergeObjects from '../utils/merge';
+import Utils from '../utils/utils';
 import {match} from 'match-feature';
 import log from 'loglevel';
 
@@ -216,15 +218,35 @@ export class RuleTree extends Rule {
                         delete ruleCache[cache_key][draw_key];
                     }
                     else {
+                        // ruleCache[cache_key][draw_key].computed_draw = mergeObjects({}, ruleCache[cache_key][draw_key]);
+                        // let computed_draw = mergeObjects({}, ruleCache[cache_key][draw_key]);
+                        let computed_draw = JSON.stringify(ruleCache[cache_key][draw_key]);
+
+                        // ruleCache[cache_key][draw_key] = Utils.stringsToFunctions(ruleCache[cache_key][draw_key], StyleParser.wrapFunction);
+
+                        ruleCache[cache_key][draw_key].computed_draw = computed_draw;
+                        // if (!ruleCache[cache_key][draw_key].computed_draw.style) {
+                        //     ruleCache[cache_key][draw_key].computed_draw.style = draw_key;
+                        // }
+
                         ruleCache[cache_key][draw_key].key = cache_key + '/' + draw_key;
                         ruleCache[cache_key][draw_key].layers = rules.map(x => x && x.full_name);
                     }
                 }
 
-                // No rules evaluated
-                if (ruleCache[cache_key] && Object.keys(ruleCache[cache_key]).length === 0) {
-                    ruleCache[cache_key] = null;
+
+                if (ruleCache[cache_key]) {
+                    // No rules evaluated
+                    if (Object.keys(ruleCache[cache_key]).length === 0) {
+                        ruleCache[cache_key] = null;
+                    }
+                    else {
+                        ruleCache[cache_key].first = true;
+                    }
                 }
+            }
+            else if (ruleCache[cache_key] != null) {
+                ruleCache[cache_key].first = false;
             }
             return ruleCache[cache_key];
         }
