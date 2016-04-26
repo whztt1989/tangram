@@ -1008,7 +1008,8 @@ export default class Scene {
     // Fires event when rendered tile set or style changes
     updateViewComplete () {
         if ((this.render_count_changed || this.generation !== this.last_complete_generation) &&
-            !this.tile_manager.isLoadingVisibleTiles()) {
+            !this.tile_manager.isLoadingVisibleTiles() &&
+            !Texture.anyLoading()) {
             this.last_complete_generation = this.generation;
             this.trigger('view_complete');
         }
