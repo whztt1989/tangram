@@ -12,10 +12,29 @@ import {StyleManager} from './styles/style_manager';
 import {parseLayers} from './styles/layer';
 import Texture from './gl/texture';
 
+import {Polygons} from './styles/polygons/polygons';
+import {Lines} from './styles/lines/lines';
+import {Points} from './styles/points/points';
+import {TextStyle} from './styles/text/text';
+import {RasterStyle} from './styles/raster/raster';
+
+import './sources/geojson';
+import './sources/topojson';
+import './sources/mvt';
+import './sources/raster';
+import './gl/vertex_elements';
+
 export var SceneWorker = self;
 
 // Worker functionality will only be defined in worker thread
 if (Thread.is_worker) {
+
+// Add built-in rendering styles
+StyleManager.register(Polygons);
+StyleManager.register(Lines);
+StyleManager.register(Points);
+StyleManager.register(TextStyle);
+StyleManager.register(RasterStyle);
 
 Object.assign(self, {
 

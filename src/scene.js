@@ -23,6 +23,9 @@ import {Points} from './styles/points/points';
 import {TextStyle} from './styles/text/text';
 import {RasterStyle} from './styles/raster/raster';
 
+let fs = require('fs');
+const worker_src = fs.readFileSync(__dirname + '/../dist/tangram.worker.min.js', 'utf8');
+
 // Add built-in rendering styles
 StyleManager.register(Polygons);
 StyleManager.register(Lines);
@@ -264,24 +267,25 @@ export default class Scene {
 
     // Get the URL to load the web worker from
     getWorkerUrl() {
-        let worker_url = this.worker_url || Utils.findCurrentURL('tangram.debug.js', 'tangram.min.js');
+        // this.worker_url = 'http://localhost:8000/dist/tangram.worker.js';
+        // let worker_url = this.worker_url || Utils.findCurrentURL('tangram.debug.js', 'tangram.min.js');
 
-        if (!worker_url) {
-            throw new Error("Can't load worker because couldn't find base URL that library was loaded from");
-        }
+        // if (!worker_url) {
+        //     throw new Error("Can't load worker because couldn't find base URL that library was loaded from");
+        // }
 
-        // Import custom data source scripts alongside core library
-        // NOTE: workaround for issue where large libraries intermittently fail to load in web workers,
-        // when multiple importScripts() calls are used. Loading all scripts (including Tangram itself)
-        // in one call at at worker creation time has not exhibited the same issue.
-        let source_scripts = Object.keys(this.config.sources).map(s => this.config.sources[s].scripts).filter(x => x);
-        if (source_scripts.length > 0) {
-            log('debug', 'loading custom data source scripts in worker:', source_scripts);
-        }
+        // // Import custom data source scripts alongside core library
+        // // NOTE: workaround for issue where large libraries intermittently fail to load in web workers,
+        // // when multiple importScripts() calls are used. Loading all scripts (including Tangram itself)
+        // // in one call at at worker creation time has not exhibited the same issue.
+        // let source_scripts = Object.keys(this.config.sources).map(s => this.config.sources[s].scripts).filter(x => x);
+        // if (source_scripts.length > 0) {
+        //     log('debug', 'loading custom data source scripts in worker:', source_scripts);
+        // }
 
-        let urls = [].concat(...source_scripts);
-        urls.push(worker_url); // load Tangram *last* (has been more reliable, though reason unknown)
-        let body = `importScripts(${urls.map(url => `'${url}'`).join(',')});`;
+        // let urls = [worker_url].concat(...source_scripts);
+        // let body = `importScripts(${urls.map(url => `'${url}'`).join(',')});`;
+        let body = worker_src;
         return Utils.createObjectURL(new Blob([body], { type: 'application/javascript' }));
     }
 
