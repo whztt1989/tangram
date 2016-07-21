@@ -1,4 +1,5 @@
 import Label from './label';
+import LabelGroup from './label_group';
 import Vector from '../vector';
 import OBB from '../utils/obb';
 
@@ -9,26 +10,30 @@ const PLACEMENT = {
 
 const MAX_ANGLE = Math.PI / 2;
 
-export default class LabelLine extends Label {
+function rule(labels, pruned) {
+    return (Object.keys(pruned).length > 0) ? {} : labels;
+}
 
-    constructor (size, lines, layout) {
-        super(size, layout);
+export default class LabelLine extends LabelGroup {
 
+    constructor(size, lines, layout) {
+        super(rule);
+
+        this.size = size;
+        this.layout = layout;
         this.lines = lines;
-
-        this.segment_size = layout.segment_size;
+        this.position = null;
+        this.align = 'center';
 
         this.placement = (layout.placement === undefined) ? PLACEMENT.MID_POINT : layout.placement;
 
-        this.position = null;
+        // articulated parameters
+        this.isArticulated = false;
+        this.segment_size = layout.segment_size;
         this.collapsed_size = [];
         this.kink_index = 0;
-        this.angle = [];
         this.spread_factor = (layout.spread_factor !== undefined) ? layout.spread_factor : 0.5;
         this.should_articulate = (layout.articulated === false) ? false : true;
-        this.offsets = [layout.offset.slice(), layout.offset.slice()];
-
-        this.isArticulated = false;
 
         // optionally limit the line segments that the label may be placed in, by specifying a segment index range
         // used as a coarse subdivide for placing multiple labels per line geometry
@@ -51,7 +56,7 @@ export default class LabelLine extends Label {
         }
 
         // clone options
-        let layout = JSON.parse(JSON.stringify(label.layout));
+        let layout = Object.create(label.layout);
         layout.segment_index = label.segment_index;
         layout.placement = label.placement;
 
@@ -267,9 +272,6 @@ export default class LabelLine extends Label {
         let upp = this.layout.units_per_pixel;
         let height = (this.size[1] + this.layout.buffer[1] * 2) * upp * Label.epsilon;
 
-        this.obbs = [];
-        this.aabbs = [];
-
         switch (this.placement) {
             case PLACEMENT.CORNER:
                 let angle0 = this.angle[0];
@@ -287,6 +289,8 @@ export default class LabelLine extends Label {
                 let dx = this.spread_factor * Math.abs(this.size[1] / Math.tan(0.5 * theta));
 
                 for (let i = 0; i < 2; i++){
+                    this.removeLabel(i, label);
+
                     let width_px = this.collapsed_size[i];
                     let angle = this.angle[i];
 
@@ -294,70 +298,46 @@ export default class LabelLine extends Label {
 
                     let direction = (i === 0) ? -1 : 1;
                     let nudge = direction * (width/2 + dx);
-                    let offset = Vector.rot([nudge, 0], -angle);
-                    let position = Vector.add(this.position, offset);
+                    let nudge_offset = Vector.rot([nudge, 0], -angle);
+                    let position = Vector.add(this.position, nudge_offset);
+                    let offset = [
+                        this.layout.offset[0] + direction * (this.collapsed_size[i] / 2 + dx),
+                        this.layout.offset[1]
+                    ];
 
-                    let obb = getOBB(position, width, height, angle, this.offset, upp);
+                    let obb = getOBB(position, width, height, angle, offset, upp);
                     let aabb = obb.getExtent();
+                    //TODO: fix height
+                    let size = [width_px, this.size[1]];
 
-                    this.obbs.push(obb);
-                    this.aabbs.push(aabb);
+                    let label = new Label(size, this.layout);
+                    label.obb = obb;
+                    label.aabb = aabb;
+                    label.offset = offset;
+                    label.position = this.position;
+                    label.angle = angle;
 
-                    this.offsets[i][0] = this.layout.offset[i] + direction * (this.collapsed_size[i]/2 + dx);
+                    this.addLabel(i, label);
                 }
                 break;
             case PLACEMENT.MID_POINT:
+                this.removeLabel(0, label);
+
                 let width = (this.size[0] + this.layout.buffer[0] * 2) * upp * Label.epsilon;
 
                 let angle = this.angle[0];
-                let obb = getOBB(this.position, width, height, angle, this.offset, upp);
+                let obb = getOBB(this.position, width, height, angle, this.layout.offset, upp);
                 let aabb = obb.getExtent();
 
-                this.obbs.push(obb);
-                this.aabbs.push(aabb);
+                let label = new Label(this.size, this.layout);
+                label.obb = obb;
+                label.aabb = aabb;
+                label.offset = this.layout.offset;
+                label.position = this.position;
+                label.angle = angle;
 
-                this.offsets[0] = this.layout.offset.slice();
-                this.offsets[1] = this.layout.offset.slice();
+                this.addLabel(0, label);
         }
-    }
-
-    inTileBounds() {
-        for (let i = 0; i < this.aabbs.length; i++) {
-            let aabb = this.aabbs[i];
-            let obj = { aabb };
-            let in_bounds = super.inTileBounds.call(obj);
-            if (!in_bounds) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    add(bboxes) {
-        for (let i = 0; i < this.aabbs.length; i++) {
-            let aabb = this.aabbs[i];
-            let obb = this.obbs[i];
-            let obj = { aabb, obb };
-            super.add.call(obj, bboxes);
-        }
-    }
-
-    discard(bboxes, exclude) {
-        if (this.throw_away) {
-            return true;
-        }
-
-        for (let i = 0; i < this.obbs.length; i++){
-            let aabb = this.aabbs[i];
-            let obb = this.obbs[i];
-            let obj = { aabb, obb };
-
-            let shouldDiscard = super.occluded.call(obj, bboxes, exclude);
-            if (shouldDiscard) {
-                return true;
-            }
-        }
-        return false;
     }
 }
 

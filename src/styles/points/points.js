@@ -11,6 +11,7 @@ import Geo from '../../geo';
 import Vector from '../../vector';
 import Collision from '../../labels/collision';
 import LabelPoint from '../../labels/label_point';
+import LabelGroup from '../../labels/label_group';
 import {TextLabels} from '../text/text_labels';
 
 let fs = require('fs');
@@ -524,8 +525,8 @@ Object.assign(Points, {
     // Build quad for point sprite
     build (style, vertex_data) {
         let label = style.label;
-        if (label.isArticulated) {
-            this.buildArticulatedLabel(label, style, vertex_data);
+        if (label instanceof LabelGroup) {
+            this.buildLabelGroup(label.labels, style, vertex_data, label.kink_index);
         }
         else {
             this.buildLabel(label, style, vertex_data);
@@ -534,11 +535,13 @@ Object.assign(Points, {
 
     buildLabel (label, style, vertex_data) {
         let vertex_template = this.makeVertexTemplate(style);
-        var angle = label.angle ? label.angle[0] : style.angle[0];
+        let angle = label.angle ? label.angle : style.angle;
+        let size = label.size ? label.size : style.size;
+        size[1] = style.size[1];
 
         this.buildQuad(
             [label.position],               // position
-            style.size,                     // size in pixels
+            size,                           // size in pixels
             angle,                          // angle in degrees
             style.sampler,                  // texture sampler to use
             label.offset,                   // offset (from center in px) to apply after rotation
@@ -547,34 +550,28 @@ Object.assign(Points, {
         );
     },
 
-    buildArticulatedLabel (label, style, vertex_data) {
-        let vertex_template = this.makeVertexTemplate(style);
-        var size = style.size.slice();
+    buildLabelGroup (labels, style, vertex_data, kink_index) {
+        for (let key in labels){
+            let label = labels[key];
 
-        for (var i = 0; i < 2; i++){
-            var angle = label.angle[i];
-            size[0] = label.collapsed_size[i];
-            var offset = label.offsets[i];
+            if (kink_index){
+                let texcoords;
 
-            var texcoord;
-            if (i === 0) {
-                texcoord = style.multi_texcoords[0].slice();
-                texcoord[2] = style.multi_texcoords[label.kink_index - 1][2];
+                //TODO: refactor how texture coordinates are combined
+                if (key === '0') {
+                    texcoords = style.multi_texcoords[0].slice();
+                    texcoords[2] = style.multi_texcoords[kink_index - 1][2];
+                }
+                else {
+                    texcoords = style.multi_texcoords[kink_index].slice();
+                    texcoords[2] = style.multi_texcoords[style.multi_texcoords.length - 1][2];
+                }
+
+                style = Object.create(style);
+                style.texcoords = style.multi_texcoords[key];
             }
-            else {
-                texcoord = style.multi_texcoords[label.kink_index].slice();
-                texcoord[2] = style.multi_texcoords[style.multi_texcoords.length - 1][2];
-            }
 
-            this.buildQuad(
-                [label.position],               // position
-                size,                           // size in pixels
-                angle,                          // angle in degrees
-                style.sampler,                  // texture sampler to use
-                offset,                         // offset (from center in px) to apply after rotation
-                texcoord,                       // texture UVs
-                vertex_data, vertex_template    // VBO and data for current vertex
-            );
+            this.buildLabel(label, style, vertex_data);
         }
     },
 

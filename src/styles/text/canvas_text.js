@@ -46,15 +46,14 @@ export default class CanvasText {
                 for (let text in text_infos) {
                     // Use cached size, or compute via canvas
                     if (!CanvasText.text_cache[style] || !CanvasText.text_cache[style][text]) {
-                        let text_settings = text_infos[text].text_settings;
+                        let settings = text_infos[text].text_settings;
                         if (first) {
-                            this.setFont(text_settings);
+                            this.setFont(settings);
                             first = false;
                         }
 
                         CanvasText.text_cache[style] = CanvasText.text_cache[style] || {};
-                        CanvasText.text_cache[style][text] =
-                            this.textSize(text, text_settings.transform, text_settings.text_wrap, text_settings.can_articulate);
+                        CanvasText.text_cache[style][text] = this.textSize(text, settings.transform, settings.text_wrap, settings.can_articulate);
                         CanvasText.cache_stats.misses++;
                     }
                     else {
