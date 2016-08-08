@@ -11,8 +11,10 @@ export var StyleParser = {};
 // - $zoom: the current map zoom level
 // - $geometry: the type of geometry, 'point', 'line', or 'polygon'
 // - $meters_per_pixel: conversion for meters/pixels at current map zoom
-StyleParser.wrapFunction = function (func) {
-    var f = `
+StyleParser.wrapFunction = function (src) {
+    var fn = new Function(['feature', 'global', '$zoom', '$layer', '$geometry', '$meters_per_pixel'], src);
+
+    return function(context){
         var feature = context.feature.properties;
         var global = context.global;
         var $zoom = context.zoom;
@@ -20,15 +22,18 @@ StyleParser.wrapFunction = function (func) {
         var $geometry = context.geometry;
         var $meters_per_pixel = context.meters_per_pixel;
 
-        var val = (function(){ ${func} }());
+        try {
+            var val = fn(feature, global, $zoom, $layer, $geometry, $meters_per_pixel);
+            if (typeof val === 'number' && isNaN(val)){
+                val = null; // convert NaNs to nulls
+            }
 
-        if (typeof val === 'number' && isNaN(val)) {
-            val = null; // convert NaNs to nulls
+            return val;
         }
-
-        return val;
-    `;
-    return f;
+        catch (error) {
+            throw error;
+        }
+    }
 };
 
 

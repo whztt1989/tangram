@@ -253,23 +253,16 @@ Utils.stringToFunction = function(val, wrap) {
         val.match(/^\s*function[^(]*\(([^)]*)\)\s*?\{([\s\S]*)\}$/m);
 
     if (fmatch && fmatch.length > 2) {
-        try {
-            let src = fmatch[2];
-            let args = fmatch[1].length > 0 && fmatch[1].split(',').map(x => x.trim()).filter(x => x);
-            args = args.length > 0 ? args : ['context']; // default to single 'context' argument
+        let src = fmatch[2];
 
-            if (typeof wrap === 'function') {
-                return new Function(...args, wrap(src)); // jshint ignore:line
-            }
-            else {
-                return new Function(...args, src); // jshint ignore:line
-            }
+        if (wrap instanceof Function) {
+            return wrap(src);
         }
-        catch (e) {
-            // fall-back to original value if parsing failed
-            return val;
+        else {
+            return new Function(src);
         }
     }
+
     return val;
 };
 
