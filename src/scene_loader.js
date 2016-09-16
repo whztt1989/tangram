@@ -191,12 +191,21 @@ export default SceneLoader = {
         // at run-time. Once a global property substitution has been recorderd, it will always be re-applied
         // on subsequent scene updates, even if the target property was updated to another literal value.
         // This is unlikely to be a common occurrence an acceptable limitation for now.
-        applied.forEach(({ prop, target, key }) => {
+        for (let i=0; i < applied.length; i++) {
+            const { prop, target, key, val } = applied[i];
+
             if (target && props[prop]) {
-                target[key] = props[prop];
-                // log('info', `Re-applying ${prop} with value ${props[prop]} to key ${key} in`, target);
+                if (target[key] !== val) {
+                    log('debug', `Skipping re-apply of global ${prop} because target value has changed, was '${val}', now '${target[key]}'`);
+                    applied.splice(i--, 1); // remove link to global property
+                }
+                else {
+                    target[key] = props[prop];
+                    applied[i].val = props[prop]; // update applied value
+                    log('trace', `Re-applying ${prop} with value ${props[prop]} to key ${key} in`, target);
+                }
             }
-        });
+        }
 
         // Find and apply new properties
         function applyProps (obj, target, key) {
@@ -204,15 +213,15 @@ export default SceneLoader = {
             if (typeof obj === 'string') {
                 const prop = (obj.slice(0, 7) === 'global.') && (obj.slice(7).replace(/\./g, separator));
                 if (prop && props[prop] !== undefined) {
-                    // Save record of where property is applied
-                    applied.push({ prop, target, key });
-
                     // Apply property
                     obj = props[prop];
+
+                    // Save record of where property is applied
+                    applied.push({ prop, target, key, val: obj });
                 }
             }
             // Loop through object properties
-            else if (typeof obj === 'object') {
+            else if (typeof obj === 'object' && !(obj instanceof Number) && !(obj instanceof String)) {
                 for (let p in obj) {
                     obj[p] = applyProps(obj[p], obj, p);
                 }
@@ -273,10 +282,21 @@ function flattenProperties (obj, separator = ':', prefix = null, props = {}) {
     for (let p in obj) {
         let key = prefix + p;
         let val = obj[p];
-        props[key] = val;
 
         if (typeof val === 'object' && !Array.isArray(val)) {
+            props[key] = val;
             flattenProperties(val, separator, key, props);
+        }
+        else {
+            // Use object wrappers instead of primitives so we can check object reference equality
+            if (typeof val === 'number') {
+                val = new Number(val); // jshint ignore:line
+            }
+            else if (typeof val === 'string') {
+                val = new String(val); // jshint ignore:line
+            }
+
+            props[key] = val;
         }
     }
     return props;
