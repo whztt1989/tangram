@@ -453,7 +453,8 @@ function reorderWordsLTR(words) {
 
 // Splitting strategy for chopping a label into segments
 function splitLabelText(text){
-    let words = text.split(' ');
+    // let words = text.split(' ');
+    let words = [text];
     let segments = [];
     let codon = 3;
     let space_indices = [];
