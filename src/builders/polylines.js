@@ -155,7 +155,8 @@ function buildPolyline(line, context, extra_lines){
 
         // Add first pair of points for the line strip
         addVertex(coordCurr, normNext, [1, v], context);
-        addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
+        addVertex(coordCurr, normNext, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
     }
 
     // INTERMEDIARY POINTS
@@ -174,7 +175,8 @@ function buildPolyline(line, context, extra_lines){
         // Remove tile boundaries
         if (remove_tile_edges && outsideTile(coordCurr, coordNext, tile_edge_tolerance)) {
             addVertex(coordCurr, normNext, [1, v], context);
-            addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
+            addVertex(coordCurr, normNext, [0, v], context, true);
+            // addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
             indexPairs(1, context);
 
             var nonBoundaryLines = getNextNonBoundarySegment(line, currIndex + 1, tile_edge_tolerance);
@@ -210,7 +212,8 @@ function buildPolyline(line, context, extra_lines){
     else {
         // Finish the line strip
         addVertex(coordCurr, normPrev, [1, v], context);
-        addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
+        addVertex(coordCurr, normPrev, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
         indexPairs(1, context);
 
         // If line ends at edge, don't add a cap
@@ -251,7 +254,8 @@ function startPolygon(coordCurr, normPrev, normNext, join_type, context){
     // If polygon starts on a tile boundary, don't add a join
     if (join_type === undefined || isCoordOutsideTile(coordCurr)) {
         addVertex(coordCurr, normNext, [1, 0], context);
-        addVertex(coordCurr, Vector.neg(normNext), [0, 0], context);
+        addVertex(coordCurr, normNext, [0, 0], context, true);
+        // addVertex(coordCurr, Vector.neg(normNext), [0, 0], context);
     }
     else {
         // If polygon starts within a tile, add a join
@@ -270,7 +274,8 @@ function endPolygon(coordCurr, normPrev, normNext, join_type, v, context) {
     // If polygon ends on a tile boundary, don't add a join
     if (isCoordOutsideTile(coordCurr)) {
         addVertex(coordCurr, normPrev, [1, v], context);
-        addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
+        addVertex(coordCurr, normPrev, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
         indexPairs(1, context);
     }
     else {
@@ -283,12 +288,14 @@ function endPolygon(coordCurr, normPrev, normNext, join_type, v, context) {
 
         if (join_type === JOIN_TYPE.miter) {
             addVertex(coordCurr, miterVec, [1, v], context);
-            addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
+            addVertex(coordCurr, miterVec, [0, v], context, true);
+            // addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
             indexPairs(1, context);
         }
         else {
             addVertex(coordCurr, normPrev, [1, v], context);
-            addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
+            addVertex(coordCurr, normPrev, [0, v], context, true);
+            // addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
             indexPairs(1, context);
         }
     }
@@ -310,7 +317,8 @@ function addMiter (v, coordCurr, normPrev, normNext, miter_len_sq, isBeginning, 
     }
     else {
         addVertex(coordCurr, miterVec, [1, v], context);
-        addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
+        addVertex(coordCurr, miterVec, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
         if (!isBeginning) {
             indexPairs(1, context);
         }
@@ -324,7 +332,8 @@ function addJoin(join_type, v, coordCurr, normPrev, normNext, isBeginning, conte
 
     if (isClockwise){
         addVertex(coordCurr, miterVec, [1, v], context);
-        addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
+        addVertex(coordCurr, normPrev, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(normPrev), [0, v], context);
 
         if (!isBeginning) {
             indexPairs(1, context);
@@ -346,11 +355,13 @@ function addJoin(join_type, v, coordCurr, normPrev, normNext, isBeginning, conte
         }
 
         addVertex(coordCurr, miterVec, [1, v], context);
-        addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
+        addVertex(coordCurr, normNext, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(normNext), [0, v], context);
     }
     else {
         addVertex(coordCurr, normPrev, [1, v], context);
-        addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
+        addVertex(coordCurr, miterVec, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
 
         if (!isBeginning) {
             indexPairs(1, context);
@@ -372,7 +383,8 @@ function addJoin(join_type, v, coordCurr, normPrev, normNext, isBeginning, conte
         }
 
         addVertex(coordCurr, normNext, [1, v], context);
-        addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
+        addVertex(coordCurr, miterVec, [0, v], context, true);
+        // addVertex(coordCurr, Vector.neg(miterVec), [0, v], context);
     }
 }
 
@@ -392,15 +404,15 @@ function indexPairs(num_pairs, context){
     }
 }
 
-function addVertex(coordinate, normal, uv, context) {
+function addVertex(coordinate, normal, uv, context, flip) {
     var vertex_template = context.vertex_template;
     var vertex_data = context.vertex_data;
 
-    buildVertexTemplate(vertex_template, coordinate, uv, normal, context);
+    buildVertexTemplate(vertex_template, coordinate, uv, normal, context, flip);
     vertex_data.addVertex(vertex_template);
 }
 
-function buildVertexTemplate (vertex_template, vertex, texture_coord, scale, context) {
+function buildVertexTemplate (vertex_template, vertex, texture_coord, scale, context, flip) {
     // set vertex position
     vertex_template[0] = vertex[0];
     vertex_template[1] = vertex[1];
@@ -415,7 +427,7 @@ function buildVertexTemplate (vertex_template, vertex, texture_coord, scale, con
     if (context.scaling_index) {
         vertex_template[context.scaling_index + 0] = scale[0] * context.scaling_normalize;
         vertex_template[context.scaling_index + 1] = scale[1] * context.scaling_normalize;
-        vertex_template[context.scaling_index + 2] = context.half_width;
+        vertex_template[context.scaling_index + 2] = flip ? -context.half_width : context.half_width;
     }
 }
 
@@ -424,6 +436,10 @@ function buildVertexTemplate (vertex_template, vertex, texture_coord, scale, con
 //  and interpolating their UVs               \ p /
 //                                             \./
 function addFan (coord, nA, nC, nB, uvA, uvC, uvB, isCap, context) {
+    // nA = Vector.neg(nA);
+    // nB = Vector.neg(nB);
+    // nC = Vector.neg(nC);
+
     var cross = nA[0] * nB[1] - nA[1] * nB[0];
     var dot = Vector.dot(nA, nB);
 
@@ -440,8 +456,8 @@ function addFan (coord, nA, nC, nB, uvA, uvC, uvB, isCap, context) {
     var pivotIndex = context.vertex_data.vertex_count;
     var vertex_elements = context.vertex_data.vertex_elements;
 
-    addVertex(coord, nC, uvC, context);
-    addVertex(coord, nA, uvA, context);
+    addVertex(coord, nC, uvC, context); //, true);
+    addVertex(coord, nA, uvA, context); //, true);
 
     var blade = nA;
 
@@ -458,6 +474,7 @@ function addFan (coord, nA, nC, nB, uvA, uvC, uvB, isCap, context) {
     }
 
     var angle_step = angle / numTriangles;
+    // blade = Vector.neg(blade);
     for (var i = 0; i < numTriangles; i++) {
         blade = Vector.rot(blade, angle_step);
 
@@ -474,7 +491,7 @@ function addFan (coord, nA, nC, nB, uvA, uvC, uvB, isCap, context) {
             }
         }
 
-        addVertex(coord, blade, uvCurr, context);
+        addVertex(coord, blade, uvCurr, context); //, true);
 
         vertex_elements.push(pivotIndex + i + ((cross > 0) ? 2 : 1));
         vertex_elements.push(pivotIndex);
@@ -521,25 +538,29 @@ function addCap (coord, v, normal, type, isBeginning, context) {
                 tangent = [normal[1], -normal[0]];
 
                 addVertex(coord, Vector.add(normal, tangent), [1, v], context);
-                addVertex(coord, Vector.add(neg_normal, tangent), [0, v], context);
+                addVertex(coord, Vector.add(normal, tangent), [0, v], context, true);
+                // addVertex(coord, Vector.add(neg_normal, tangent), [0, v], context);
 
                 // Add length of square cap to texture coordinate
                 v += 0.5 * context.texcoord_width * context.v_scale;
 
                 addVertex(coord, normal, [1, v], context);
-                addVertex(coord, neg_normal, [0, v], context);
+                addVertex(coord, normal, [0, v], context, true);
+                // addVertex(coord, neg_normal, [0, v], context);
             }
             else {
                 tangent = [-normal[1], normal[0]];
 
                 addVertex(coord, normal, [1, v], context);
-                addVertex(coord, neg_normal, [0, v], context);
+                addVertex(coord, normal, [0, v], context, true);
+                // addVertex(coord, neg_normal, [0, v], context);
 
                 // Add length of square cap to texture coordinate
                 v += 0.5 * context.texcoord_width * context.v_scale;
 
                 addVertex(coord, Vector.add(normal, tangent), [1, v], context);
-                addVertex(coord, Vector.add(neg_normal, tangent), [0, v], context);
+                addVertex(coord, Vector.add(normal, tangent), [0, v], context, true);
+                // addVertex(coord, Vector.add(neg_normal, tangent), [0, v], context);
             }
 
             indexPairs(1, context);
