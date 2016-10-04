@@ -232,7 +232,7 @@ export default class TileManager {
                 continue;
             }
 
-            let key = Tile.key(coords, source, this.view.tile_zoom);
+            let key = Tile.normalizedKey(coords, source, this.view.tile_zoom);
             if (key && !this.hasTile(key)) {
                 let tile = Tile.create({
                     source,
