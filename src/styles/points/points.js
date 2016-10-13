@@ -45,6 +45,7 @@ Object.assign(Points, {
             { name: 'a_stops', size: 3, type: gl.SHORT, normalized: false },
             { name: 'a_texcoord', size: 2, type: gl.UNSIGNED_SHORT, normalized: true },
             { name: 'a_offset', size: 2, type: gl.SHORT, normalized: false },
+            { name: 'a_offsets', size: 4, type: gl.SHORT, normalized: false },
             { name: 'a_color', size: 4, type: gl.UNSIGNED_BYTE, normalized: true }
         ];
 
@@ -503,15 +504,14 @@ Object.assign(Points, {
         }
 
         this.fillVertexTemplate('a_pre_angle', 0, { size: 1 });
+        this.fillVertexTemplate('a_offsets', 0, { size: 4 });
         this.fillVertexTemplate('a_angles', 0, { size: 4 });
         this.fillVertexTemplate('a_stops', 0, { size: 3 });
 
         return this.vertex_template;
     },
 
-    buildQuad(points, size, angle, angles, stops, pre_angle, sampler, offset, texcoord_scale, vertex_data, vertex_template) {
-        if (!Array.isArray(angles)) debugger;
-
+    buildQuad(points, size, angle, angles, stops, pre_angle, sampler, offset, offsets, texcoord_scale, vertex_data, vertex_template) {
         buildQuadsForPoints(
             points,
             vertex_data,
@@ -521,6 +521,7 @@ Object.assign(Points, {
                 position_index: this.vertex_layout.index.a_position,
                 shape_index: this.vertex_layout.index.a_shape,
                 offset_index: this.vertex_layout.index.a_offset,
+                offsets_index: this.vertex_layout.index.a_offsets,
                 pre_angle_index: this.vertex_layout.index.a_pre_angle,
                 angles_index: this.vertex_layout.index.a_angles,
                 stops_index: this.vertex_layout.index.a_stops
@@ -529,6 +530,7 @@ Object.assign(Points, {
                 quad: size,
                 quad_normalize: 256,    // values have an 8-bit fraction
                 offset,
+                offsets,
                 angle: angle * 4096,    // values have a 12-bit fraction
                 angles: angles.map(function(val){ return 4096 * val; }),    // values have a 12-bit fraction
                 stops: stops,
@@ -557,6 +559,8 @@ Object.assign(Points, {
         let angle = style.angle;
         let angles = [angle, angle, angle, angle];
         let stops = [1,1,1];
+        let offset = label.offset;
+        let offsets = [offset[0], offset[0], offset[0], offset[0]];
 
         this.buildQuad(
             [label.position],               // position
@@ -566,7 +570,8 @@ Object.assign(Points, {
             stops,
             0,                              // pre-angle in radians
             style.sampler,                  // texture sampler to use
-            label.offset,                   // offset from center in pixels
+            offset,                   // offset from center in pixels
+            offsets,
             style.texcoords,                // texture UVs
             vertex_data, vertex_template    // VBO and data for current vertex
         );
@@ -583,14 +588,16 @@ Object.assign(Points, {
             let position = label.position;
             let pre_angle = label.pre_angles ? label.pre_angles[i] : 0;
 
-            let angles, stops;
+            let angles, stops, offsets;
             if (label.angle_info){
                 angles = label.angle_info[i].angle_array;
                 stops = label.angle_info[i].stop_array;
+                offsets = label.angle_info[i].offsets;
             }
             else {
                 angles = [angle, angle, angle, angle];
                 stops = [1,1,1];
+                offsets = [offset[0], offset[0], offset[0], offset[0]];
             }
 
             this.buildQuad(
@@ -602,6 +609,7 @@ Object.assign(Points, {
                 pre_angle,                      // pre-angle in radians
                 style.sampler,                  // texture sampler to use
                 offset,                         // offset from center in pixels
+                offsets,
                 texcoord,                       // texture UVs
                 vertex_data, vertex_template    // VBO and data for current vertex
             );
